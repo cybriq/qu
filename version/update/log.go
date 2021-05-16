@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/p9c/log"
+	_l "github.com/cybriq/log"
 
-	"github.com/p9c/qu/version"
+	"github.com/cybriq/qu/version"
 )
 
-var F, E, W, I, D, T = log.GetLogPrinterSet(log.AddLoggerSubsystem(version.PathBase))
+var log = _l.Get(_l.Add(version.PathBase))

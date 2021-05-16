@@ -1,12 +1,11 @@
 package qu
 
 import (
+	log2 "github.com/cybriq/log"
+	"go.uber.org/atomic"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/p9c/log"
-	"go.uber.org/atomic"
 )
 
 // C is your basic empty struct signalling channel
@@ -26,7 +25,7 @@ func SetLogging(on bool) {
 
 func l(a ...interface{}) {
 	if logEnabled.Load() {
-		D.Ln(a...)
+		log.D.Ln(a...)
 	}
 }
 
@@ -34,7 +33,7 @@ func l(a ...interface{}) {
 func T() C {
 	mx.Lock()
 	defer mx.Unlock()
-	msg := log.Caller("chan from", 1)
+	msg := log2.Caller("chan from", 1)
 	l("created", msg)
 	createdList = append(createdList, msg)
 	o := make(C)
@@ -48,7 +47,7 @@ func T() C {
 func Ts(n int) C {
 	mx.Lock()
 	defer mx.Unlock()
-	msg := log.Caller("buffered chan from", 1)
+	msg := log2.Caller("buffered chan from", 1)
 	l("created", msg)
 	createdList = append(createdList, msg)
 	o := make(C, n)
@@ -64,9 +63,9 @@ func (c C) Q() {
 		defer mx.Unlock()
 		if !testChanIsClosed(c) {
 			close(c)
-			return "closing chan from " + loc + log.Caller("\n"+strings.Repeat(" ", 48)+"from", 1)
+			return "closing chan from " + loc + log2.Caller("\n"+strings.Repeat(" ", 48)+"from", 1)
 		} else {
-			return "from" + log.Caller("", 1) + "\n" + strings.Repeat(" ", 48) +
+			return "from" + log2.Caller("", 1) + "\n" + strings.Repeat(" ", 48) +
 				"channel " + loc + " was already closed"
 		}
 	}(),
@@ -81,7 +80,7 @@ func (c C) Signal() {
 
 // Wait should be placed with a `<-` in a select case in addition to the channel variable name
 func (c C) Wait() <-chan struct{} {
-	l(func() (o string) { return "waiting on " + getLocForChan(c) + log.Caller("at", 1) }())
+	l(func() (o string) { return "waiting on " + getLocForChan(c) + log2.Caller("at", 1) }())
 	return c
 }
 
@@ -120,7 +119,7 @@ func init() {
 	go func() {
 		for {
 			<-time.After(time.Minute)
-			D.Ln("cleaning up closed channels")
+			log.D.Ln("cleaning up closed channels")
 			var c []C
 			var ll []string
 			mx.Lock()
@@ -150,9 +149,9 @@ func PrintChanState() {
 			break
 		}
 		if testChanIsClosed(createdChannels[i]) {
-			_T.Ln(">>> closed", createdList[i])
+			log.T.Ln(">>> closed", createdList[i])
 		} else {
-			_T.Ln("<<< open", createdList[i])
+			log.T.Ln("<<< open", createdList[i])
 		}
 	}
 	mx.Unlock()
