@@ -1,11 +1,12 @@
 package qu
 
 import (
-	log2 "github.com/cybriq/log"
-	"go.uber.org/atomic"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/cybriq/atomic"
+	log2 "github.com/cybriq/log"
 )
 
 // C is your basic empty struct signalling channel
@@ -57,18 +58,25 @@ func Ts(n int) C {
 
 // Q closes the channel, which makes it emit a nil every time it is selected
 func (c C) Q() {
-	l(func() (o string) {
-		loc := getLocForChan(c)
-		mx.Lock()
-		defer mx.Unlock()
-		if !testChanIsClosed(c) {
-			close(c)
-			return "closing chan from " + loc + log2.Caller("\n"+strings.Repeat(" ", 48)+"from", 1)
-		} else {
-			return "from" + log2.Caller("", 1) + "\n" + strings.Repeat(" ", 48) +
-				"channel " + loc + " was already closed"
-		}
-	}(),
+	l(
+		func() (o string) {
+			loc := getLocForChan(c)
+			mx.Lock()
+			defer mx.Unlock()
+			if !testChanIsClosed(c) {
+				close(c)
+				return "closing chan from " + loc + log2.Caller(
+					"\n"+strings.Repeat(
+						" ", 48,
+					)+"from", 1,
+				)
+			} else {
+				return "from" + log2.Caller("", 1) + "\n" + strings.Repeat(
+					" ", 48,
+				) +
+					"channel " + loc + " was already closed"
+			}
+		}(),
 	)
 }
 
@@ -80,7 +88,13 @@ func (c C) Signal() {
 
 // Wait should be placed with a `<-` in a select case in addition to the channel variable name
 func (c C) Wait() <-chan struct{} {
-	l(func() (o string) { return "waiting on " + getLocForChan(c) + log2.Caller("at", 1) }())
+	l(
+		func() (o string) {
+			return "waiting on " + getLocForChan(c) + log2.Caller(
+				"at", 1,
+			)
+		}(),
+	)
 	return c
 }
 
