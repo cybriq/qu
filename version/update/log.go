@@ -1,9 +1,8 @@
 package main
 
 import (
-	_l "github.com/cybriq/log"
-
-	"github.com/cybriq/qu/version"
+	logg "log"
+	"os"
 )
 
-var log = _l.Get(_l.Add(version.PathBase))
+var log = logg.New(os.Stderr, "basedd ", logg.Llongfile)

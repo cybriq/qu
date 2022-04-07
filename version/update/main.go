@@ -27,20 +27,23 @@ var (
 )
 
 func main() {
-	log.I.Ln(version.Get())
+	log.Println(version.Get())
 	BuildTime = time.Now().Format(time.RFC3339)
 	var cwd string
 	var e error
-	if cwd, e = os.Getwd(); log.E.Chk(e) {
+	if cwd, e = os.Getwd(); e != nil {
+		log.Println(e)
 		return
 	}
 	cwd = filepath.Dir(cwd)
 	var repo *git.Repository
-	if repo, e = git.PlainOpen(cwd); log.E.Chk(e) {
+	if repo, e = git.PlainOpen(cwd); e != nil {
+		log.Println(e)
 		return
 	}
 	var rr []*git.Remote
-	if rr, e = repo.Remotes(); log.E.Chk(e) {
+	if rr, e = repo.Remotes(); e != nil {
+		log.Println(e)
 		return
 	}
 	for i := range rr {
@@ -62,17 +65,20 @@ func main() {
 		}
 	}
 	var tr *git.Worktree
-	if tr, e = repo.Worktree(); log.E.Chk(e) {
+	if tr, e = repo.Worktree(); e != nil {
+		log.Println(e)
 	}
 	var rh *plumbing.Reference
-	if rh, e = repo.Head(); log.E.Chk(e) {
+	if rh, e = repo.Head(); e != nil {
+		log.Println(e)
 		return
 	}
 	rhs := rh.Strings()
 	GitRef = rhs[0]
 	GitCommit = rhs[1]
 	var rt storer.ReferenceIter
-	if rt, e = repo.Tags(); log.E.Chk(e) {
+	if rt, e = repo.Tags(); e != nil {
+		log.Println(e)
 		return
 	}
 	var maxVersion int
@@ -85,7 +91,9 @@ func main() {
 			if strings.HasPrefix(prs, "v") {
 				var va [3]int
 				var meta string
-				_, _ = fmt.Sscanf(prs, "v%d.%d.%d%s", &va[0], &va[1], &va[2], &meta)
+				_, _ = fmt.Sscanf(prs, "v%d.%d.%d%s", &va[0], &va[1], &va[2],
+					&meta,
+				)
 				vn := va[0]*1000000 + va[1]*1000 + va[2]
 				if maxVersion < vn {
 					maxVersion = vn
@@ -102,7 +110,8 @@ func main() {
 			}
 			return
 		},
-	); log.E.Chk(e) {
+	); e != nil {
+		log.Println(e)
 		return
 	}
 	if !maxIs {
@@ -172,7 +181,8 @@ func Get() string {
 		Meta,
 	)
 	path := filepath.Join(filepath.Join(PathBase, "version"), "version.go")
-	if e = ioutil.WriteFile(path, []byte(versionFileOut), 0666); log.E.Chk(e) {
+	if e = ioutil.WriteFile(path, []byte(versionFileOut), 0666); e != nil {
+		log.Println(e)
 	}
 	// I.Ln("updated version.go written")
 	return

@@ -1,12 +1,11 @@
 package qu
 
 import (
+	"fmt"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/cybriq/atomic"
-	log2 "github.com/cybriq/log"
 )
 
 // C is your basic empty struct signalling channel
@@ -16,17 +15,18 @@ var (
 	createdList     []string
 	createdChannels []C
 	mx              sync.Mutex
-	logEnabled      = atomic.NewBool(false)
+	logEnabled      = false
+	KillAll         = T()
 )
 
 // SetLogging switches on and off the channel logging
 func SetLogging(on bool) {
-	logEnabled.Store(on)
+	logEnabled = on
 }
 
 func l(a ...interface{}) {
-	if logEnabled.Load() {
-		log.D.Ln(a...)
+	if logEnabled {
+		log.Println(a...)
 	}
 }
 
@@ -34,7 +34,7 @@ func l(a ...interface{}) {
 func T() C {
 	mx.Lock()
 	defer mx.Unlock()
-	msg := log2.Caller("chan from", 1)
+	msg := Caller("chan from", 1)
 	l("created", msg)
 	createdList = append(createdList, msg)
 	o := make(C)
@@ -48,7 +48,7 @@ func T() C {
 func Ts(n int) C {
 	mx.Lock()
 	defer mx.Unlock()
-	msg := log2.Caller("buffered chan from", 1)
+	msg := Caller("buffered chan from", 1)
 	l("created", msg)
 	createdList = append(createdList, msg)
 	o := make(C, n)
@@ -65,13 +65,13 @@ func (c C) Q() {
 			defer mx.Unlock()
 			if !testChanIsClosed(c) {
 				close(c)
-				return "closing chan from " + loc + log2.Caller(
+				return "closing chan from " + loc + Caller(
 					"\n"+strings.Repeat(
 						" ", 48,
 					)+"from", 1,
 				)
 			} else {
-				return "from" + log2.Caller("", 1) + "\n" + strings.Repeat(
+				return "from" + Caller("", 1) + "\n" + strings.Repeat(
 					" ", 48,
 				) +
 					"channel " + loc + " was already closed"
@@ -90,7 +90,7 @@ func (c C) Signal() {
 func (c C) Wait() <-chan struct{} {
 	l(
 		func() (o string) {
-			return "waiting on " + getLocForChan(c) + log2.Caller(
+			return "waiting on " + getLocForChan(c) + Caller(
 				"at", 1,
 			)
 		}(),
@@ -131,25 +131,30 @@ func getLocForChan(c C) (s string) {
 // once a minute clean up the channel cache to remove closed channels no longer in use
 func init() {
 	go func() {
+	out:
 		for {
-			<-time.After(time.Minute)
-			log.D.Ln("cleaning up closed channels")
-			var c []C
-			var ll []string
-			mx.Lock()
-			for i := range createdChannels {
-				if i >= len(createdList) {
-					break
+			select {
+			case <-time.After(time.Minute):
+				log.Println("cleaning up closed channels")
+				var c []C
+				var ll []string
+				mx.Lock()
+				for i := range createdChannels {
+					if i >= len(createdList) {
+						break
+					}
+					if testChanIsClosed(createdChannels[i]) {
+					} else {
+						c = append(c, createdChannels[i])
+						ll = append(ll, createdList[i])
+					}
 				}
-				if testChanIsClosed(createdChannels[i]) {
-				} else {
-					c = append(c, createdChannels[i])
-					ll = append(ll, createdList[i])
-				}
+				createdChannels = c
+				createdList = ll
+				mx.Unlock()
+			case <-KillAll.Wait():
+				break out
 			}
-			createdChannels = c
-			createdList = ll
-			mx.Unlock()
 		}
 	}()
 }
@@ -163,9 +168,9 @@ func PrintChanState() {
 			break
 		}
 		if testChanIsClosed(createdChannels[i]) {
-			log.T.Ln(">>> closed", createdList[i])
+			log.Println(">>> closed", createdList[i])
 		} else {
-			log.T.Ln("<<< open", createdList[i])
+			log.Println("<<< open", createdList[i])
 		}
 	}
 	mx.Unlock()
@@ -188,4 +193,10 @@ func GetOpenChanCount() (o int) {
 	}
 	mx.Unlock()
 	return
+}
+
+func Caller(comment string, skip int) string {
+	_, file, line, _ := runtime.Caller(skip + 1)
+	o := fmt.Sprintf("%s: %s:%d", comment, file, line)
+	return o
 }
