@@ -30,7 +30,8 @@ func l(a ...interface{}) {
 	}
 }
 
-// T creates an unbuffered chan struct{} for trigger and quit signalling (momentary and breaker switches)
+// T creates an unbuffered chan struct{} for trigger and quit signalling
+// (momentary and breaker switches)
 func T() C {
 	mx.Lock()
 	defer mx.Unlock()
@@ -42,9 +43,10 @@ func T() C {
 	return o
 }
 
-// Ts creates a buffered chan struct{} which is specifically intended for signalling without blocking, generally one is
-// the size of buffer to be used, though there might be conceivable cases where the channel should accept more signals
-// without blocking the caller
+// Ts creates a buffered chan struct{} which is specifically intended for
+// signalling without blocking, generally one is the size of buffer to be used,
+// though there might be conceivable cases where the channel should accept more
+// signals without blocking the caller
 func Ts(n int) C {
 	mx.Lock()
 	defer mx.Unlock()
@@ -80,13 +82,15 @@ func (c C) Q() {
 	)
 }
 
-// Signal sends struct{}{} on the channel which functions as a momentary switch, useful in pairs for stop/start
+// Signal sends struct{}{} on the channel which functions as a momentary switch,
+// useful in pairs for stop/start
 func (c C) Signal() {
 	l(func() (o string) { return "signalling " + getLocForChan(c) }())
 	c <- struct{}{}
 }
 
-// Wait should be placed with a `<-` in a select case in addition to the channel variable name
+// Wait should be placed with a `<-` in a select case in addition to the channel
+// variable name
 func (c C) Wait() <-chan struct{} {
 	l(
 		func() (o string) {
@@ -98,8 +102,8 @@ func (c C) Wait() <-chan struct{} {
 	return c
 }
 
-// testChanIsClosed allows you to see whether the channel has been closed so you can avoid a panic by trying to close or
-// signal on it
+// testChanIsClosed allows you to see whether the channel has been closed so you
+// can avoid a panic by trying to close or signal on it
 func testChanIsClosed(ch C) (o bool) {
 	if ch == nil {
 		return true
@@ -128,7 +132,8 @@ func getLocForChan(c C) (s string) {
 	return
 }
 
-// once a minute clean up the channel cache to remove closed channels no longer in use
+// once a minute clean up the channel cache to remove closed channels no longer
+// in use
 func init() {
 	go func() {
 	out:
@@ -159,8 +164,8 @@ func init() {
 	}()
 }
 
-// PrintChanState creates an output showing the current state of the channels being monitored
-// This is a function for use by the programmer while debugging
+// PrintChanState creates an output showing the current state of the channels
+// being monitored This is a function for use by the programmer while debugging
 func PrintChanState() {
 	mx.Lock()
 	for i := range createdChannels {
