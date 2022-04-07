@@ -3,8 +3,6 @@ module github.com/cybriq/qu
 go 1.16
 
 require (
-	github.com/cybriq/atomic v1.7.2
-	github.com/cybriq/log v0.0.6
 	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
